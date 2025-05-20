@@ -1,5 +1,47 @@
 import socket
 import ssl
+import sys
+import tkinter
+import os
+
+
+WIDTH, HEIGHT = 800, 600
+SCROLL_STEP = 100
+HSTEP, VSTEP = 13, 18
+
+
+class Browser:
+
+    def __init__(self):
+        self.window = tkinter.Tk()
+        self.canvas = tkinter.Canvas(
+            self.window,
+            width=WIDTH,
+            height=HEIGHT,
+        )
+        self.canvas.pack()
+
+        self.scroll = 0
+        self.window.bind("<Down>", self.scrolldown)
+
+    def draw(self):
+        for x, y, c in self.display_list:
+            if y > self.scroll + HEIGHT:
+                continue
+            if y + VSTEP < self.scroll:
+                continue
+            self.canvas.create_text(x, y - self.scroll, text=c)
+
+    def load(self, url):
+        body = url.request()
+        text = lex(body)
+        self.display_list = layout(text)
+        self.draw()
+
+    def scrolldown(self, e):
+        self.scroll += SCROLL_STEP
+        self.canvas.delete("all")
+        self.draw()
 
 
 class URL:
@@ -67,7 +109,8 @@ class URL:
         return content
 
 
-def show(body):
+def lex(body):
+    text = ""
     in_tag = False
     for c in body:
         if c == "<":
@@ -75,19 +118,29 @@ def show(body):
         elif c == ">":
             in_tag = False
         elif not in_tag:
-            print(c, end="")
+            text += c
+    return text
 
 
-def load(url):
-    body = url.request()
-    show(body)
+def layout(text):
+    display_list = []
+
+    cursor_x, cursor_y = HSTEP, VSTEP
+    for c in text:
+        display_list.append((cursor_x, cursor_y, c))
+        cursor_x += HSTEP
+
+        if cursor_x >= WIDTH - HSTEP:
+            cursor_y += VSTEP
+            cursor_x = HSTEP
+
+    return display_list
 
 
 if __name__ == "__main__":
-    import sys
-    import os
-
     if len(sys.argv) > 1:
-        load(URL(sys.argv[1]))
+        Browser().load(URL(sys.argv[1]))
     else:
-        load(URL("file://" + os.getcwd() + "/default.html"))
+        Browser().load(URL("file://" + os.getcwd() + "/default.html"))
+
+    tkinter.mainloop()
