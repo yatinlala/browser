@@ -28,8 +28,10 @@ class URL:
             ctx = ssl.create_default_context()
             s = ctx.wrap_socket(s, server_hostname=self.host)
 
-        request = f"GET {self.path} HTTP/1.0\r\n"
+        request = f"GET {self.path} HTTP/1.1\r\n"
         request += f"Host: {self.host}\r\n"
+        request += f"Connection: close\r\n"
+        request += f"User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:138.0) Gecko/20100101 Firefox/138.0\r\n"
         request += "\r\n"
 
         s.send(request.encode("utf8"))
